@@ -5,7 +5,10 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(PROJECT_SOURCES
-    main.cpp
+        main.cpp
+        include/ITelemetryDisplay.h
+        include/TerminalDisplay.h
+        source/TerminalDisplay.cpp
         # Drop the library files in your project root
 )
 
