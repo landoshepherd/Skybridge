@@ -6,11 +6,20 @@
 #define SKYBRIDGE_ITELEMETRYDISPLAY_H
 
 #include <string>
+enum class GPSStatus {
+  OPERATIONAL,
+  DOWN
+};
 
 struct TelemetryData {
-  double altitude;
-  std::string gpsStatus;
-  double batteryVoltage;
+  GPSStatus   gpsStatus;
+  double      latitude;
+  double      longitude;
+  double      altitude;
+  double      groundSpeed;
+  double      rateOfClimb;
+  double      batteryVoltage;
+  std::string time;
 };
 
 class ITelemetryDisplay {
