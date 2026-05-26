@@ -52,6 +52,9 @@ Makefile
 install_manifest.txt
 compile_commands.json
 
+# IDE Configs
+.idea/
+
 # Temporary files
 *.tmp
 *.log
