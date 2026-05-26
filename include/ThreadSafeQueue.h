@@ -20,6 +20,8 @@ public:
   // Blocking - Will wait until there is an element to pop from queue
   void waitAndPop();
 
+  void waitAndPop(TelemetryData& data);
+
   // Non-blocking - will try to pop from queue if element exists
   bool tryPop();
 

@@ -21,6 +21,13 @@ void ThreadSafeQueue::waitAndPop() {
   m_dataQueue.pop();
 }
 
+void ThreadSafeQueue::waitAndPop(TelemetryData& data) {
+  std::unique_lock<std::mutex> lock(m_mutex);
+  m_dataCond.wait(lock, [this]{return !m_dataQueue.empty();});
+  data = m_dataQueue.front();
+  m_dataQueue.pop();
+}
+
 bool ThreadSafeQueue::tryPop() {
   std::lock_guard<std::mutex> lock(m_mutex);
   if (!m_dataQueue.empty()) {
