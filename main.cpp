@@ -5,10 +5,18 @@
 
 #include "include/ITelemetryDisplay.h"
 #include "include/TerminalDisplay.h"
+#include "include/ThreadSafeQueue.h"
 
+void processData() {
+
+}
+
+void prepareData(ThreadSafeQueue& queue) {
+
+}
 
 int main(int argc, char *argv[]) {
-    const TelemetryData data {
+    TelemetryData data {
       .gpsStatus = GPSStatus::OPERATIONAL,
       .latitude = 27.849293,
       .longitude = -82.114077,
@@ -19,11 +27,21 @@ int main(int argc, char *argv[]) {
       .time = "12:59"
     };
 
-    const std::shared_ptr<ITelemetryDisplay> display = std::make_shared<TerminalDisplay>();
+    const std::shared_ptr<ITelemetryDisplay> terminalDisplay = std::make_shared<TerminalDisplay>();
+    ThreadSafeQueue& queue = ThreadSafeQueue::getInstance();
 
-    for (int i = 0; i < 8; i++){
-      display->updateDisplay(data);
-      std::this_thread::sleep_for(std::chrono::seconds(1));
+    queue.push(data);
+
+    std::cout << "Queue Count: " << queue.count() << std::endl;
+
+    TelemetryData& front = queue.front();
+    terminalDisplay->updateDisplay(front);
+    queue.waitAndPop();
+
+    std::cout << "Queue Count: " << queue.count() << std::endl;
+
+    if (queue.empty()) {
+      std::cout << "Queue is empty" << std::endl;
     }
 
 

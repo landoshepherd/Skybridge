@@ -9,6 +9,8 @@ set(PROJECT_SOURCES
         include/ITelemetryDisplay.h
         include/TerminalDisplay.h
         source/TerminalDisplay.cpp
+        include/ThreadSafeQueue.h
+        source/ThreadSafeQueue.cpp
         # Drop the library files in your project root
 )
 
