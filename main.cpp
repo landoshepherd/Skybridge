@@ -6,6 +6,7 @@
 #include "include/ITelemetryDisplay.h"
 #include "include/TerminalDisplay.h"
 #include "include/ThreadSafeQueue.h"
+#include "include/AmqClient.h"
 
 void processData(const std::shared_ptr<ITelemetryDisplay>& terminalDisplay) {
   ThreadSafeQueue& queue = ThreadSafeQueue::getInstance();
@@ -43,9 +44,29 @@ void receiveData() {
 }
 
 int main(int argc, char *argv[]) {
+  AmqClient client("localhost:5672", "admin", "admin");
+  proton::container container(client);
+  std::thread container_thread([&]() {container.run();});
 
+  // Allow for the connection to be made before moving on
+  std::this_thread::sleep_for(std::chrono::seconds(1));
 
-  const std::shared_ptr<ITelemetryDisplay> terminalDisplay = std::make_shared<TerminalDisplay>();
+  std::thread sender([&]() {
+    proton::message msg("Lando sent this");
+    msg.creation_time(proton::timestamp::now());
+    client.send(msg);
+  });
+
+  std::thread receiver([&]() {
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+    auto msg = client.receive();
+  });
+
+  receiver.join();
+  sender.join();
+  container_thread.join();
+
+  /*const std::shared_ptr<ITelemetryDisplay> terminalDisplay = std::make_shared<TerminalDisplay>();
   ThreadSafeQueue& queue = ThreadSafeQueue::getInstance();
 
   // Start new thread that mimics receiving data
@@ -60,7 +81,7 @@ int main(int argc, char *argv[]) {
 
   if (dataProcessorThread.joinable()) {
     dataProcessorThread.join();
-  }
+  }*/
 
   return 0;
 }
