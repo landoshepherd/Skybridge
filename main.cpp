@@ -3,12 +3,14 @@
 #include <thread>
 #include <chrono>
 
-#include "include/ITelemetryDisplay.h"
+#include "include/interfaces/ITelemetryDisplay.h"
 #include "include/TerminalDisplay.h"
 #include "include/ThreadSafeQueue.h"
 #include "include/AmqClient.h"
+#include "simdjson.h"
+#include "include/VehicleTelemetryPayload.h"
 
-void processData(const std::shared_ptr<ITelemetryDisplay>& terminalDisplay) {
+/*void processData(const std::shared_ptr<ITelemetryDisplay>& terminalDisplay) {
   ThreadSafeQueue& queue = ThreadSafeQueue::getInstance();
 
   while (true) {
@@ -28,7 +30,7 @@ void receiveData() {
     std::this_thread::sleep_for(std::chrono::seconds(5));
     std::cout << "Data Receiver: DATA RECEIVED!" << std::endl;
 
-    TelemetryData data {
+    VehicleTelemetryMessage data {
       .gpsStatus = GPSStatus::OPERATIONAL,
       .latitude = 27.849293,
       .longitude = -82.114077,
@@ -36,14 +38,44 @@ void receiveData() {
       .groundSpeed = 10,
       .rateOfClimb = 3,
       .batteryVoltage = 3.7,
-      .time = "12:59"
     };
 
     queue.push(data);
   }
-}
+}*/
+
+std::string data = R"(
+  {
+    "messagePacket":{
+      "source": "me",
+      "destination": "you",
+      "uuid": "hfhsoiehf",
+      "timestamp": 1779912000000,
+      "messageType": "VEHICLE_TELEMETRY",
+      "data":{
+        "gpsStatus": 3,
+        "latitude": 32.7555,
+        "longitude": -97.3308,
+        "altitude": 152.4,
+        "groundSpeed": 12.5,
+        "rateOfClimb": 1.2,
+        "batteryVoltage": 11.4
+      }
+    }
+  }
+)";
 
 int main(int argc, char *argv[]) {
+  /*simdjson::dom::parser parser;
+  try {
+    simdjson::dom::object telemetryJson = parser.load("../telemetry.json");
+    parser.
+    std::cout << telemetryJson["longitude"].get_double() << std::endl;
+  }
+  catch (std::exception& ex) {
+    std::cerr << "Something went wrong: " << ex.what() << std::endl;
+  }*/
+
   AmqClient client("localhost:5672", "admin", "admin");
   proton::container container(client);
   std::thread container_thread([&]() {container.run();});
@@ -52,7 +84,8 @@ int main(int argc, char *argv[]) {
   std::this_thread::sleep_for(std::chrono::seconds(1));
 
   std::thread sender([&]() {
-    proton::message msg("Lando sent this");
+    // TODO: Wrap telemetry data into Message packet then serialize it
+    proton::message msg(data);
     msg.creation_time(proton::timestamp::now());
     client.send(msg);
   });
@@ -60,6 +93,32 @@ int main(int argc, char *argv[]) {
   std::thread receiver([&]() {
     std::this_thread::sleep_for(std::chrono::seconds(3));
     auto msg = client.receive();
+    // TODO: Deserialize msg.data into VehicleTelemetryMessage here
+    std::string body = proton::get<std::string>(msg.body());
+    try {
+      simdjson::dom::parser parser;
+      simdjson::dom::element doc;
+      auto error = parser.parse(body).get(doc);
+      if (error) {
+        std::cout << "It didn't work" << std::endl;
+      }
+      std::cout << doc["messagePacket"]["messageType"] << std::endl;
+      //std::cout << jsonData["messageType"].get_string() << std::endl;
+      //simdjson::dom::object dataObject = jsonData["data"].get_object();
+
+      VehicleTelemetryPayload telemetry_message;
+      telemetry_message.setLatitude(doc["messagePacket"]["data"]["latitude"]);
+      telemetry_message.setLongitude(doc["messagePacket"]["data"]["longitude"]);
+      telemetry_message.setAltitude(doc["messagePacket"]["data"]["altitude"]);
+
+      std::cout << "Latitude: " << telemetry_message.getLatitude() << "\n";
+      std::cout << "Longitude: " << telemetry_message.getLongitude() << "\n";
+      std::cout << "Altitude: " << telemetry_message.getAltitude() << std::endl;
+    }
+    catch (std::exception& ex) {
+      std::cout << ex.what() << std::endl;
+    }
+    //std::cout << "MESSAGE: " << body << std::endl;
   });
 
   receiver.join();

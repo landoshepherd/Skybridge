@@ -8,25 +8,25 @@
 #include <queue>
 #include <condition_variable>
 
-#include "ITelemetryDisplay.h"
+#include "interfaces/ITelemetryDisplay.h"
 
 class ThreadSafeQueue {
 public:
   static ThreadSafeQueue &getInstance();
 
   // Adds element to queue
-  void push(TelemetryData& data);
+  void push(MessagePacket& data);
 
   // Blocking - Will wait until there is an element to pop from queue
   void waitAndPop();
 
-  void waitAndPop(TelemetryData& data);
+  void waitAndPop(MessagePacket& data);
 
   // Non-blocking - will try to pop from queue if element exists
   bool tryPop();
 
   // Peek at the first element of the queue
-  TelemetryData& front();
+  MessagePacket& front();
 
   // Checks if queue is empty
   bool empty();
@@ -42,7 +42,7 @@ public:
 
 private:
   std::mutex m_mutex;
-  std::queue<TelemetryData> m_dataQueue;
+  std::queue<MessagePacket> m_dataQueue;
   std::condition_variable m_dataCond;
 
 private:

@@ -7,8 +7,8 @@
 #include <iostream>
 #include <iomanip>
 
-void TerminalDisplay::updateDisplay(const TelemetryData &data) {
-  std::cout << "GPS Status:      " << static_cast<int>(data.gpsStatus) << std::endl;
+void TerminalDisplay::updateDisplay(const MessagePacket &data) {
+  /*std::cout << "GPS Status:      " << static_cast<int>(data.gpsStatus) << std::endl;
 
   std::cout << std::setprecision(10);
   std::cout << "Latitude:        " << data.latitude <<  std::endl;
@@ -20,7 +20,7 @@ void TerminalDisplay::updateDisplay(const TelemetryData &data) {
   std::cout << "Rate of Climb:   " << data.rateOfClimb << std::endl;
   std::cout << "Battery Voltage: " << data.batteryVoltage << std::endl;
   std::cout << "Time:            " << data.time << std::endl;
-  std::cout << "*****************************************" << std::endl;
+  std::cout << "*****************************************" << std::endl;*/
 }
 
 
