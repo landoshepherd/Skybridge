@@ -59,15 +59,15 @@ std::string VehicleTelemetryPayload::serialize() {
   return buffer.GetString();
 }
 
-void VehicleTelemetryPayload::setGpsStatus(GPSStatus status) {
+void VehicleTelemetryPayload::updateGPSStatus(GPSStatus status) {
   m_gpsStatus = status;
 }
 
-GPSStatus VehicleTelemetryPayload::getGpsStatus() const {
+GPSStatus VehicleTelemetryPayload::getGPSStatus() const {
   return m_gpsStatus;
 }
 
-void VehicleTelemetryPayload::setLatitude(double latitude) {
+void VehicleTelemetryPayload::updateLatitude(double latitude) {
   m_latitude = latitude;
 }
 
@@ -75,7 +75,7 @@ double VehicleTelemetryPayload::getLatitude() const {
   return m_latitude;
 }
 
-void VehicleTelemetryPayload::setLongitude(double longitude) {
+void VehicleTelemetryPayload::updateLongitude(double longitude) {
   m_longitude = longitude;
 }
 
@@ -83,7 +83,7 @@ double VehicleTelemetryPayload::getLongitude() const {
   return m_longitude;
 }
 
-void VehicleTelemetryPayload::setAltitude(double altitude) {
+void VehicleTelemetryPayload::updateAltitude(double altitude) {
   m_altitude = altitude;
 }
 
@@ -91,7 +91,7 @@ double VehicleTelemetryPayload::getAltitude() const {
   return m_altitude;
 }
 
-void VehicleTelemetryPayload::setGroundSpeed(double groundSpeed) {
+void VehicleTelemetryPayload::updateGroundSpeed(double groundSpeed) {
   m_groundSpeed = groundSpeed;
 }
 
@@ -99,7 +99,7 @@ double VehicleTelemetryPayload::getGroundSpeed() const {
   return m_groundSpeed;
 }
 
-void VehicleTelemetryPayload::setRateOfClimb(double rateOfClimb) {
+void VehicleTelemetryPayload::updateRateOfClimb(double rateOfClimb) {
   m_rateOfClimb = rateOfClimb;
 }
 
@@ -107,7 +107,7 @@ double VehicleTelemetryPayload::getRateOfClimb() const {
   return m_rateOfClimb;
 }
 
-void VehicleTelemetryPayload::setBatteryVoltage(double batteryVoltage) {
+void VehicleTelemetryPayload::updateBatteryVoltage(double batteryVoltage) {
   m_batteryVoltage = batteryVoltage;
 }
 

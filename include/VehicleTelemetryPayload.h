@@ -19,7 +19,7 @@ struct VehicleTelemetryData {
 
 };
 
-class VehicleTelemetryPayload : public IMessagePlayload {
+class VehicleTelemetryPayload : public IMessagePayload {
 public:
   VehicleTelemetryPayload(GPSStatus status, const double& latitude, const double& longitude,
                           const double& altitude, const double& groundSpeed,
@@ -29,25 +29,25 @@ public:
   std::string serialize() override;
 
   // Getters and Setters for individual telemetry fields
-  void setGpsStatus(GPSStatus status);
-  GPSStatus getGpsStatus() const;
+  void updateGPSStatus(GPSStatus status);
+  GPSStatus getGPSStatus() const;
 
-  void setLatitude(double latitude);
+  void updateLatitude(double latitude);
   double getLatitude() const;
 
-  void setLongitude(double longitude);
+  void updateLongitude(double longitude);
   double getLongitude() const;
 
-  void setAltitude(double altitude);
+  void updateAltitude(double altitude);
   double getAltitude() const;
 
-  void setGroundSpeed(double groundSpeed);
+  void updateGroundSpeed(double groundSpeed);
   double getGroundSpeed() const;
 
-  void setRateOfClimb(double rateOfClimb);
+  void updateRateOfClimb(double rateOfClimb);
   double getRateOfClimb() const;
 
-  void setBatteryVoltage(double batteryVoltage);
+  void updateBatteryVoltage(double batteryVoltage);
   double getBatteryVoltage() const;
 
 private:

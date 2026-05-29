@@ -7,7 +7,7 @@
 #include "include/TerminalDisplay.h"
 #include "include/ThreadSafeQueue.h"
 #include "include/AmqClient.h"
-#include "simdjson.h"
+#include "rapidjson/document.h"
 #include "include/VehicleTelemetryPayload.h"
 
 /*void processData(const std::shared_ptr<ITelemetryDisplay>& terminalDisplay) {
@@ -66,16 +66,7 @@ std::string data = R"(
 )";
 
 int main(int argc, char *argv[]) {
-  /*simdjson::dom::parser parser;
-  try {
-    simdjson::dom::object telemetryJson = parser.load("../telemetry.json");
-    parser.
-    std::cout << telemetryJson["longitude"].get_double() << std::endl;
-  }
-  catch (std::exception& ex) {
-    std::cerr << "Something went wrong: " << ex.what() << std::endl;
-  }*/
-
+  // Connect to the amqp router
   AmqClient client("localhost:5672", "admin", "admin");
   proton::container container(client);
   std::thread container_thread([&]() {container.run();});
@@ -92,24 +83,31 @@ int main(int argc, char *argv[]) {
 
   std::thread receiver([&]() {
     std::this_thread::sleep_for(std::chrono::seconds(3));
-    auto msg = client.receive();
-    // TODO: Deserialize msg.data into VehicleTelemetryMessage here
-    std::string body = proton::get<std::string>(msg.body());
-    try {
-      simdjson::dom::parser parser;
-      simdjson::dom::element doc;
-      auto error = parser.parse(body).get(doc);
-      if (error) {
-        std::cout << "It didn't work" << std::endl;
-      }
-      std::cout << doc["messagePacket"]["messageType"] << std::endl;
-      //std::cout << jsonData["messageType"].get_string() << std::endl;
-      //simdjson::dom::object dataObject = jsonData["data"].get_object();
+    proton::message msg = client.receive();
 
-      VehicleTelemetryPayload telemetry_message;
-      telemetry_message.setLatitude(doc["messagePacket"]["data"]["latitude"]);
-      telemetry_message.setLongitude(doc["messagePacket"]["data"]["longitude"]);
-      telemetry_message.setAltitude(doc["messagePacket"]["data"]["altitude"]);
+    // TODO: Deserialize msg.data into VehicleTelemetryMessage here
+    const auto body = proton::get<std::string>(msg.body());
+
+    MessagePacket packet = MessagePacket::serialize(to_string(msg.body()));
+
+    try {
+      rapidjson::Document doc;
+      doc.Parse(body.c_str());
+
+      if (doc.HasParseError()) {
+        std::cerr << "ERROR: Failed to parse message" << std::endl;
+      }
+
+      auto gpsStatus = static_cast<GPSStatus>(doc["messagePacket"]["data"]["gpsStatus"].GetInt());
+      double latitude = doc["messagePacket"]["data"]["latitude"].GetDouble();
+      double longitude = doc["messagePacket"]["data"]["longitude"].GetDouble();
+      double altitude = doc["messagePacket"]["data"]["altitude"].GetDouble();
+      double groundSpeed = doc["messagePacket"]["data"]["groundSpeed"].GetDouble();
+      double rateOfClimb = doc["messagePacket"]["data"]["rateOfClimb"].GetDouble();
+      double batteryVoltage = doc["messagePacket"]["data"]["batteryVoltage"].GetDouble();
+      VehicleTelemetryPayload telemetry_message(gpsStatus, latitude, longitude,
+                                                altitude, groundSpeed, rateOfClimb, batteryVoltage);
+
 
       std::cout << "Latitude: " << telemetry_message.getLatitude() << "\n";
       std::cout << "Longitude: " << telemetry_message.getLongitude() << "\n";

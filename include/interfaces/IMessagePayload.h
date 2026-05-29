@@ -7,10 +7,24 @@
 
 #include <string>
 
-class IMessagePlayload {
+class IMessagePayload {
 public:
   virtual std::string serialize() = 0;
-  virtual ~IMessagePlayload() = default;
+
+  // Move constructor
+  IMessagePayload(IMessagePayload&&) = default;
+
+  // Copy assignment
+  IMessagePayload& operator=(IMessagePayload&) = delete;
+
+  // Move assignment operator
+  IMessagePayload& operator=(IMessagePayload&&) = default;
+
+  // Copy constructor
+  IMessagePayload(IMessagePayload&) = delete;
+
+  // Destructor
+  virtual ~IMessagePayload() = default;
 private:
 };
 #endif //SKYBRIDGE_IMESSAGEPAYLOAD_H

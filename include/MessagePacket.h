@@ -7,6 +7,8 @@
 
 #include <string>
 #include <memory>
+#include <chrono>
+#include <map>
 #include "uuid.h"
 #include "interfaces/IMessagePayload.h"
 
@@ -27,19 +29,34 @@ public:
   void setId(const uuids::uuid& id);
   const uuids::uuid& getId();
 
-  void setTimestamp(const std::string& timestamp);
-  const std::string& getTimestamp();
+  void setTimestamp(const std::time_t& timestamp);
+  const std::time_t& getTimestamp();
 
   void setMessageType(MessageType type);
   MessageType getMessageType();
 
+  static MessagePacket deserialize(const std::string& dataStr);
+
+public:
   // Constructor
   MessagePacket(const std::string& source,
                 const std::string& destination,
                 const uuids::uuid& id,
-                const std::string& timestamp,
+                const std::time_t& timestamp,
                 MessageType messageType,
-                std::unique_ptr<IMessagePlayload> messagePayload);
+                std::unique_ptr<IMessagePayload> messagePayload = nullptr);
+
+  // Move constructor
+  MessagePacket(MessagePacket&&) = default;
+
+  // Copy assignment
+  MessagePacket& operator=(MessagePacket&) = delete;
+
+  // Move assignment operator
+  MessagePacket& operator=(MessagePacket&&) = default;
+
+  // Copy constructor
+  MessagePacket(MessagePacket&) = delete;
 
   // Destructor
   ~MessagePacket() = default;
@@ -48,9 +65,9 @@ private:
   std::string m_source;
   std::string m_destination;
   uuids::uuid m_id;
-  std::string m_timestamp;
+  std::time_t m_timestamp; // YYYY-MM-DDTHH:mm:ss
   MessageType m_messageType;
-  std::unique_ptr<IMessagePlayload> m_payload;
+  std::unique_ptr<IMessagePayload> m_payload;
 
   // TODO: Add serialization callback table here
 };
