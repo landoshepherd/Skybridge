@@ -49,9 +49,9 @@ std::string data = R"(
     "messagePacket":{
       "source": "me",
       "destination": "you",
-      "uuid": "hfhsoiehf",
-      "timestamp": 1779912000000,
-      "messageType": "VEHICLE_TELEMETRY",
+      "uuid": "d47e32b8-936a-4b21-b1e8-724f11d293c6",
+      "timestamp": "1999-12-31T11:59:59",
+      "messageType": 1,
       "data":{
         "gpsStatus": 3,
         "latitude": 32.7555,
@@ -88,35 +88,21 @@ int main(int argc, char *argv[]) {
     // TODO: Deserialize msg.data into VehicleTelemetryMessage here
     const auto body = proton::get<std::string>(msg.body());
 
-    MessagePacket packet = MessagePacket::serialize(to_string(msg.body()));
-
     try {
-      rapidjson::Document doc;
-      doc.Parse(body.c_str());
-
-      if (doc.HasParseError()) {
-        std::cerr << "ERROR: Failed to parse message" << std::endl;
-      }
-
-      auto gpsStatus = static_cast<GPSStatus>(doc["messagePacket"]["data"]["gpsStatus"].GetInt());
-      double latitude = doc["messagePacket"]["data"]["latitude"].GetDouble();
-      double longitude = doc["messagePacket"]["data"]["longitude"].GetDouble();
-      double altitude = doc["messagePacket"]["data"]["altitude"].GetDouble();
-      double groundSpeed = doc["messagePacket"]["data"]["groundSpeed"].GetDouble();
-      double rateOfClimb = doc["messagePacket"]["data"]["rateOfClimb"].GetDouble();
-      double batteryVoltage = doc["messagePacket"]["data"]["batteryVoltage"].GetDouble();
-      VehicleTelemetryPayload telemetry_message(gpsStatus, latitude, longitude,
-                                                altitude, groundSpeed, rateOfClimb, batteryVoltage);
-
-
-      std::cout << "Latitude: " << telemetry_message.getLatitude() << "\n";
-      std::cout << "Longitude: " << telemetry_message.getLongitude() << "\n";
-      std::cout << "Altitude: " << telemetry_message.getAltitude() << std::endl;
+      const MessagePacket packet = MessagePacket::deserialize(to_string(msg.body()));
+      /*
+      TODO: Move this activity to it's own thread. This thread is only for
+        receiving messages and putting them on the queue.
+      */
+      TerminalDisplay display;
+      display.updateDisplay(packet);
     }
     catch (std::exception& ex) {
-      std::cout << ex.what() << std::endl;
+      std::cout << "Error Processing received message. Message tossed. Recovering..." << std::endl;
     }
-    //std::cout << "MESSAGE: " << body << std::endl;
+
+
+
   });
 
   receiver.join();

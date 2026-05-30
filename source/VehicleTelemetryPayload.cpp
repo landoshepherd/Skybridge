@@ -5,9 +5,22 @@
 #include "include/VehicleTelemetryPayload.h"
 
 #include "simdjson.h"
-#include "rapidjson/rapidjson.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
+#include "include/MessagePacket.h"
+#include "rapidjson/document.h"
+
+struct DeserializerRegister {
+  void doRegistration(const std::function<IMessagePayload*(const std::string&)>& deserializer) {
+    MessagePacket::registerDeserializer(MessageType::VEHICLE_TELEMETRY, deserializer);
+  }
+
+  DeserializerRegister(const std::function<IMessagePayload*(const std::string&)>& deserializer) {
+      doRegistration(deserializer);
+  }
+};
+
+static DeserializerRegister reg(VehicleTelemetryPayload::deserialize);
 
 VehicleTelemetryPayload::VehicleTelemetryPayload(GPSStatus status,
                                                  const double& latitude,
@@ -57,6 +70,27 @@ std::string VehicleTelemetryPayload::serialize() {
   writer.EndObject();
 
   return buffer.GetString();
+}
+
+IMessagePayload* VehicleTelemetryPayload::deserialize(const std::string& payloadStr) {
+  rapidjson::Document doc;
+  doc.Parse(payloadStr.c_str());
+
+  if (doc.HasParseError()) {
+    std::cerr << "ERROR: Failed to parse message" << std::endl;
+  }
+
+  auto gpsStatus = static_cast<GPSStatus>(doc["messagePacket"]["data"]["gpsStatus"].GetInt());
+  double latitude = doc["messagePacket"]["data"]["latitude"].GetDouble();
+  double longitude = doc["messagePacket"]["data"]["longitude"].GetDouble();
+  double altitude = doc["messagePacket"]["data"]["altitude"].GetDouble();
+  double groundSpeed = doc["messagePacket"]["data"]["groundSpeed"].GetDouble();
+  double rateOfClimb = doc["messagePacket"]["data"]["rateOfClimb"].GetDouble();
+  double batteryVoltage = doc["messagePacket"]["data"]["batteryVoltage"].GetDouble();
+
+  IMessagePayload* payload = new VehicleTelemetryPayload(gpsStatus, latitude, longitude, altitude, groundSpeed, rateOfClimb, batteryVoltage);
+
+  return payload;
 }
 
 void VehicleTelemetryPayload::updateGPSStatus(GPSStatus status) {

@@ -15,18 +15,17 @@ enum class GPSStatus {
   DOWN
 };
 
-struct VehicleTelemetryData {
-
-};
-
 class VehicleTelemetryPayload : public IMessagePayload {
 public:
   VehicleTelemetryPayload(GPSStatus status, const double& latitude, const double& longitude,
                           const double& altitude, const double& groundSpeed,
                           const double& rateOfClimb, const double& batteryVoltage);
+
   ~VehicleTelemetryPayload() override = default;
 
   std::string serialize() override;
+
+  static IMessagePayload* deserialize(const std::string& payloadStr);
 
   // Getters and Setters for individual telemetry fields
   void updateGPSStatus(GPSStatus status);

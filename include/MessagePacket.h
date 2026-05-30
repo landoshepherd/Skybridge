@@ -13,6 +13,7 @@
 #include "interfaces/IMessagePayload.h"
 
 //TODO: Storing the message types here for now. Will move to another place later.
+//TODO: Write an issue to convert these types to strings.
 enum class MessageType {
   HEARTBEAT = 0,
   VEHICLE_TELEMETRY
@@ -21,21 +22,25 @@ enum class MessageType {
 class MessagePacket {
 public:
   void setSource(const std::string& source);
-  const std::string& getSource();
+  const std::string& getSource() const;
 
   void setDestination(const std::string& destination);
-  const std::string& getDestination();
+  const std::string& getDestination() const;
 
   void setId(const uuids::uuid& id);
-  const uuids::uuid& getId();
+  const uuids::uuid& getId() const;
 
   void setTimestamp(const std::time_t& timestamp);
-  const std::time_t& getTimestamp();
+  const std::time_t& getTimestamp() const;
 
   void setMessageType(MessageType type);
-  MessageType getMessageType();
+  MessageType getMessageType() const;
+
+  const std::shared_ptr<const IMessagePayload> getPayload() const;
 
   static MessagePacket deserialize(const std::string& dataStr);
+
+  static void registerDeserializer(MessageType msgType, const std::function<IMessagePayload*(const std::string&)>& deserializer);
 
 public:
   // Constructor
@@ -44,7 +49,7 @@ public:
                 const uuids::uuid& id,
                 const std::time_t& timestamp,
                 MessageType messageType,
-                std::unique_ptr<IMessagePayload> messagePayload = nullptr);
+                std::shared_ptr<IMessagePayload> messagePayload = nullptr);
 
   // Move constructor
   MessagePacket(MessagePacket&&) = default;
@@ -62,12 +67,12 @@ public:
   ~MessagePacket() = default;
 
 private:
-  std::string m_source;
+  std::string m_source; // TODO: Will source and destination be service names or UUIDs of services?
   std::string m_destination;
   uuids::uuid m_id;
   std::time_t m_timestamp; // YYYY-MM-DDTHH:mm:ss
   MessageType m_messageType;
-  std::unique_ptr<IMessagePayload> m_payload;
+  std::shared_ptr<IMessagePayload> m_payload;
 
   // TODO: Add serialization callback table here
 };

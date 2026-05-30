@@ -11,20 +11,20 @@ class IMessagePayload {
 public:
   virtual std::string serialize() = 0;
 
-  // Move constructor
-  IMessagePayload(IMessagePayload&&) = default;
-
-  // Copy assignment
-  IMessagePayload& operator=(IMessagePayload&) = delete;
-
-  // Move assignment operator
-  IMessagePayload& operator=(IMessagePayload&&) = default;
-
-  // Copy constructor
-  IMessagePayload(IMessagePayload&) = delete;
+  // Allow default construction for derived classes
+  IMessagePayload() = default;
 
   // Destructor
   virtual ~IMessagePayload() = default;
+
+  // Delete copy constructor and assignment to prevent object slicing
+  IMessagePayload(const IMessagePayload&) = delete;
+  IMessagePayload& operator=(const IMessagePayload&) = delete;
+
+  // Delete move constructor and assignment to prevent object slicing
+  IMessagePayload(IMessagePayload&&) = delete;
+  IMessagePayload& operator=(IMessagePayload&&) = delete;
 private:
+
 };
 #endif //SKYBRIDGE_IMESSAGEPAYLOAD_H
