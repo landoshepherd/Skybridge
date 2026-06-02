@@ -7,21 +7,31 @@
 #include <iostream>
 #include <iomanip>
 
-void TerminalDisplay::updateDisplay(const TelemetryData &data) {
-  std::cout << "GPS Status:      " << static_cast<int>(data.gpsStatus) << std::endl;
+#include "include/VehicleTelemetryPayload.h"
 
-  std::cout << std::setprecision(10);
-  std::cout << "Latitude:        " << data.latitude <<  std::endl;
-  std::cout << "Longitude:       " << data.longitude << std::endl;
+void TerminalDisplay::updateDisplay(const MessagePacket &data) {
 
-  std::cout << std::setprecision(2);
-  std::cout << "Altitude:        " << data.altitude << std::endl;
-  std::cout << "Ground Speed:    " << data.groundSpeed << std::endl;
-  std::cout << "Rate of Climb:   " << data.rateOfClimb << std::endl;
-  std::cout << "Battery Voltage: " << data.batteryVoltage << std::endl;
-  std::cout << "Time:            " << data.time << std::endl;
+  std::cout << "MESSAGE PACKET" << std::endl;
+  std::cout << "SOURCE:       " << data.getSource() << "\n";
+  std::cout << "DESTINATION:  " << data.getDestination() << "\n";
+  std::cout << "ID:           " << data.getId() << "\n";
+  std::cout << "TIMESTAMP:    " << data.getTimestamp() << std::endl;
+
+  updateVehicleTelemetryDisplay(data.getPayload());
+
   std::cout << "*****************************************" << std::endl;
 }
 
+void TerminalDisplay::updateVehicleTelemetryDisplay(const std::shared_ptr<const IMessagePayload> payload) {
+  std::shared_ptr<const VehicleTelemetryPayload> data =
+    std::static_pointer_cast<const VehicleTelemetryPayload>(payload);
 
+  std::cout << "VEHICLE TELEMETRY\n";
+  std::cout << "ALTITUDE:         " << data->getAltitude() << "\n";
+  std::cout << "LATITUDE:         " << data->getLatitude() << "\n";
+  std::cout << "LONGITUDE:        " << data->getLongitude() << "\n";
+  std::cout << "GROUND SPEED:     " << data->getGroundSpeed() << "\n";
+  std::cout << "RATE OF CLIMB:    " << data->getRateOfClimb() << "\n";
+  std::cout << "BATTERY Voltage:  " << data->getBatteryVoltage() << std::endl;
+}
 

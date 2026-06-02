@@ -9,7 +9,7 @@ ThreadSafeQueue &ThreadSafeQueue::getInstance() {
   return singleton;
 }
 
-void ThreadSafeQueue::push(TelemetryData &data) {
+void ThreadSafeQueue::push(MessagePacket &data) {
   std::lock_guard<std::mutex> lock(m_mutex);
   m_dataQueue.push(std::move(data));
   m_dataCond.notify_one();
@@ -21,10 +21,10 @@ void ThreadSafeQueue::waitAndPop() {
   m_dataQueue.pop();
 }
 
-void ThreadSafeQueue::waitAndPop(TelemetryData& data) {
+void ThreadSafeQueue::waitAndPop(MessagePacket& data) {
   std::unique_lock<std::mutex> lock(m_mutex);
   m_dataCond.wait(lock, [this]{return !m_dataQueue.empty();});
-  data = m_dataQueue.front();
+  data = std::move(m_dataQueue.front());
   m_dataQueue.pop();
 }
 
@@ -37,7 +37,7 @@ bool ThreadSafeQueue::tryPop() {
   return false;
 }
 
-TelemetryData& ThreadSafeQueue::front() {
+MessagePacket& ThreadSafeQueue::front() {
   std::lock_guard<std::mutex> lock(m_mutex);
   return m_dataQueue.front();
 }

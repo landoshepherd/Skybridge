@@ -4,14 +4,15 @@
 
 #ifndef SKYBRIDGE_TERMINALDISPLAY_H
 #define SKYBRIDGE_TERMINALDISPLAY_H
-#include "ITelemetryDisplay.h"
+#include "interfaces/ITelemetryDisplay.h"
 
 class TerminalDisplay : public ITelemetryDisplay {
 public:
   TerminalDisplay() = default;
   ~TerminalDisplay() override = default;
 
-  void updateDisplay(const TelemetryData &data) override;
+  void updateDisplay(const MessagePacket &data) override;
+  void updateVehicleTelemetryDisplay(const std::shared_ptr<const IMessagePayload> payload);
 private:
 };
 
