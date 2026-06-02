@@ -11,6 +11,7 @@
 #include <map>
 #include "uuid.h"
 #include "interfaces/IMessagePayload.h"
+#include "rapidjson/document.h"
 
 //TODO: Storing the message types here for now. Will move to another place later.
 //TODO: Write an issue to convert these types to strings.
@@ -40,7 +41,7 @@ public:
 
   static MessagePacket deserialize(const std::string& dataStr);
 
-  static void registerDeserializer(MessageType msgType, const std::function<IMessagePayload*(const std::string&)>& deserializer);
+  static void registerDeserializer(MessageType msgType, const std::function<IMessagePayload*(const rapidjson::Value&)>& deserializer);
 
 public:
   // Constructor
@@ -49,7 +50,7 @@ public:
                 const uuids::uuid& id,
                 const std::time_t& timestamp,
                 MessageType messageType,
-                std::shared_ptr<IMessagePayload> messagePayload = nullptr);
+                std::shared_ptr<IMessagePayload> messagePayload);
 
   // Move constructor
   MessagePacket(MessagePacket&&) = default;

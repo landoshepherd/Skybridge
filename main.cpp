@@ -52,7 +52,7 @@ std::string data = R"(
       "uuid": "d47e32b8-936a-4b21-b1e8-724f11d293c6",
       "timestamp": "1999-12-31T11:59:59",
       "messageType": 1,
-      "data":{
+      "payload":{
         "gpsStatus": 3,
         "latitude": 32.7555,
         "longitude": -97.3308,
@@ -66,14 +66,17 @@ std::string data = R"(
 )";
 
 int main(int argc, char *argv[]) {
-  // Connect to the amqp router
+  // Connect to the amq server
+  // TODO: Make this configurable via a configuration file
   AmqClient client("localhost:5672", "admin", "admin");
   proton::container container(client);
   std::thread container_thread([&]() {container.run();});
 
-  // Allow for the connection to be made before moving on
+  // Wait a second to allow for the connection to be made before moving on
+  // TODO: Is there a way we can wait for a specific condition instead
   std::this_thread::sleep_for(std::chrono::seconds(1));
 
+  // Set up the sender and wait for a message
   std::thread sender([&]() {
     // TODO: Wrap telemetry data into Message packet then serialize it
     proton::message msg(data);
@@ -84,8 +87,7 @@ int main(int argc, char *argv[]) {
   std::thread receiver([&]() {
     std::this_thread::sleep_for(std::chrono::seconds(3));
     proton::message msg = client.receive();
-
-    // TODO: Deserialize msg.data into VehicleTelemetryMessage here
+    
     const auto body = proton::get<std::string>(msg.body());
 
     try {
@@ -100,31 +102,11 @@ int main(int argc, char *argv[]) {
     catch (std::exception& ex) {
       std::cout << "Error Processing received message. Message tossed. Recovering..." << std::endl;
     }
-
-
-
   });
 
   receiver.join();
   sender.join();
   container_thread.join();
-
-  /*const std::shared_ptr<ITelemetryDisplay> terminalDisplay = std::make_shared<TerminalDisplay>();
-  ThreadSafeQueue& queue = ThreadSafeQueue::getInstance();
-
-  // Start new thread that mimics receiving data
-  std::thread dataReceiverThread(receiveData);
-
-  // Start data processor thread
-  std::thread dataProcessorThread(processData, terminalDisplay);
-
-  if (dataReceiverThread.joinable()) {
-    dataReceiverThread.join();
-  }
-
-  if (dataProcessorThread.joinable()) {
-    dataProcessorThread.join();
-  }*/
 
   return 0;
 }

@@ -12,6 +12,7 @@ public:
   ~TerminalDisplay() override = default;
 
   void updateDisplay(const MessagePacket &data) override;
+  void updateVehicleTelemetryDisplay(const std::shared_ptr<const IMessagePayload> payload);
 private:
 };
 

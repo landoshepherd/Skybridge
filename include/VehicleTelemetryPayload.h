@@ -8,6 +8,7 @@
 #include <string>
 
 #include "interfaces/IMessagePayload.h"
+#include "rapidjson/document.h"
 
 
 enum class GPSStatus {
@@ -25,7 +26,7 @@ public:
 
   std::string serialize() override;
 
-  static IMessagePayload* deserialize(const std::string& payloadStr);
+  static IMessagePayload* deserialize(const rapidjson::Value& payloadStr);
 
   // Getters and Setters for individual telemetry fields
   void updateGPSStatus(GPSStatus status);

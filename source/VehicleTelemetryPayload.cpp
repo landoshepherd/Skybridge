@@ -11,11 +11,11 @@
 #include "rapidjson/document.h"
 
 struct DeserializerRegister {
-  void doRegistration(const std::function<IMessagePayload*(const std::string&)>& deserializer) {
+  void doRegistration(const std::function<IMessagePayload*(const rapidjson::Value&)>& deserializer) {
     MessagePacket::registerDeserializer(MessageType::VEHICLE_TELEMETRY, deserializer);
   }
 
-  DeserializerRegister(const std::function<IMessagePayload*(const std::string&)>& deserializer) {
+  DeserializerRegister(const std::function<IMessagePayload*(const rapidjson::Value&)>& deserializer) {
       doRegistration(deserializer);
   }
 };
@@ -36,9 +36,7 @@ m_altitude(altitude),
 m_groundSpeed(groundSpeed),
 m_rateOfClimb(rateOfClimb),
 m_batteryVoltage(batteryVoltage)
-{
-
-}
+{}
 
 std::string VehicleTelemetryPayload::serialize() {
   rapidjson::StringBuffer buffer;
@@ -72,25 +70,67 @@ std::string VehicleTelemetryPayload::serialize() {
   return buffer.GetString();
 }
 
-IMessagePayload* VehicleTelemetryPayload::deserialize(const std::string& payloadStr) {
-  rapidjson::Document doc;
-  doc.Parse(payloadStr.c_str());
+IMessagePayload* VehicleTelemetryPayload::deserialize(const rapidjson::Value& payload) {
+  if (!payload.HasMember("gpsStatus")) {
+    std::string errorMessage = "ERROR: Malformed packet. Missing: 'gpsStatus'";
+    std::cerr << errorMessage << std::endl;
 
-  if (doc.HasParseError()) {
-    std::cerr << "ERROR: Failed to parse message" << std::endl;
+    throw std::runtime_error(errorMessage);
   }
+  auto gpsStatus = static_cast<GPSStatus>(payload["gpsStatus"].GetInt());
 
-  auto gpsStatus = static_cast<GPSStatus>(doc["messagePacket"]["data"]["gpsStatus"].GetInt());
-  double latitude = doc["messagePacket"]["data"]["latitude"].GetDouble();
-  double longitude = doc["messagePacket"]["data"]["longitude"].GetDouble();
-  double altitude = doc["messagePacket"]["data"]["altitude"].GetDouble();
-  double groundSpeed = doc["messagePacket"]["data"]["groundSpeed"].GetDouble();
-  double rateOfClimb = doc["messagePacket"]["data"]["rateOfClimb"].GetDouble();
-  double batteryVoltage = doc["messagePacket"]["data"]["batteryVoltage"].GetDouble();
+  if (!payload.HasMember("latitude")) {
+    std::string errorMessage = "ERROR: Malformed packet. Missing: 'latitude'";
+    std::cerr << errorMessage << std::endl;
 
-  IMessagePayload* payload = new VehicleTelemetryPayload(gpsStatus, latitude, longitude, altitude, groundSpeed, rateOfClimb, batteryVoltage);
+    throw std::runtime_error(errorMessage);
+  }
+  double latitude = payload["latitude"].GetDouble();
 
-  return payload;
+  if (!payload.HasMember("longitude")) {
+    std::string errorMessage = "ERROR: Malformed packet. Missing: 'longitude'";
+    std::cerr << errorMessage << std::endl;
+
+    throw std::runtime_error(errorMessage);
+  }
+  double longitude = payload["longitude"].GetDouble();
+
+  if (!payload.HasMember("altitude")) {
+    std::string errorMessage = "ERROR: Malformed packet. Missing: 'altitude'";
+    std::cerr << errorMessage << std::endl;
+
+    throw std::runtime_error(errorMessage);
+  }
+  double altitude = payload["altitude"].GetDouble();
+
+  if (!payload.HasMember("groundSpeed")) {
+    std::string errorMessage = "ERROR: Malformed packet. Missing: 'groundSpeed'";
+    std::cerr << errorMessage << std::endl;
+
+    throw std::runtime_error(errorMessage);
+  }
+  double groundSpeed = payload["groundSpeed"].GetDouble();
+
+  if (!payload.HasMember("rateOfClimb")) {
+    std::string errorMessage = "ERROR: Malformed packet. Missing: 'rateOfClimb'";
+    std::cerr << errorMessage << std::endl;
+
+    throw std::runtime_error(errorMessage);
+  }
+  double rateOfClimb = payload["rateOfClimb"].GetDouble();
+
+  if (!payload.HasMember("batteryVoltage")) {
+    std::string errorMessage = "ERROR: Malformed packet. Missing: 'batteryVoltage'";
+    std::cerr << errorMessage << std::endl;
+
+    throw std::runtime_error(errorMessage);
+  }
+  double batteryVoltage = payload["batteryVoltage"].GetDouble();
+
+  IMessagePayload* payloadObj = new VehicleTelemetryPayload(gpsStatus, latitude, longitude, altitude,
+    groundSpeed, rateOfClimb, batteryVoltage);
+
+  return payloadObj;
 }
 
 void VehicleTelemetryPayload::updateGPSStatus(GPSStatus status) {

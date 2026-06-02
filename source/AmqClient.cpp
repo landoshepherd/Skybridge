@@ -8,12 +8,11 @@ AmqClient::AmqClient(const std::string& address, const std::string& username, co
 m_amqAddress(address), m_username(username), m_password(password), m_workQueue(nullptr){}
 
 void AmqClient::send(const proton::message& msg) {
-  std::cout << "SYSTEM: Sending message..." << std::endl;
   // A work queue is basically a queue of tasks
   // that qpid::proton manages proton objects.
-  // This is not our message queue.
+  // This is not our message queue we will use
+  // for message processing.
   m_workQueue->add([=](){m_sender.send(msg);});
-  std::cout << "SYSTEM: Message sent" << std::endl;
 }
 
 proton::message AmqClient::receive() {

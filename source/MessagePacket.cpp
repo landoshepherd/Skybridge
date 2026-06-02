@@ -13,15 +13,13 @@
 
 // Local
 
-
-
-static std::map<MessageType, std::function<IMessagePayload*(const std::string&)>> getDispatchTable() {
-  static std::map<MessageType, std::function<IMessagePayload*(const std::string&)>> dispatchTable{};
+static std::map<MessageType, std::function<IMessagePayload*(const rapidjson::Value&)>>& getDispatchTable() {
+  static std::map<MessageType, std::function<IMessagePayload*(const rapidjson::Value&)>> dispatchTable;
   return dispatchTable;
 }
 
 void MessagePacket::registerDeserializer(MessageType msgType,
-  const std::function<IMessagePayload*(const std::string&)>& deserializer) {
+  const std::function<IMessagePayload*(const rapidjson::Value&)>& deserializer) {
   getDispatchTable().insert(std::make_pair(msgType, deserializer));
 }
 
@@ -42,7 +40,7 @@ MessagePacket MessagePacket::deserialize(const std::string& dataStr) {
   }
 
   if (!doc.HasMember("messagePacket") || !doc["messagePacket"].IsObject()) {
-    std::string errorMessage = "ERROR: Malformed packet. Missing: `messagePacket`";
+    std::string errorMessage = "ERROR: Malformed packet. Missing: `messagePacket'";
     std::cerr << errorMessage << std::endl;
 
     throw std::runtime_error(errorMessage);
@@ -51,7 +49,7 @@ MessagePacket MessagePacket::deserialize(const std::string& dataStr) {
   rapidjson::Value& msgPacketRoot = doc["messagePacket"];
 
   if (!msgPacketRoot.HasMember("source")) {
-    std::string errorMessage = "ERROR: Malformed packet. Missing: 'source`";
+    std::string errorMessage = "ERROR: Malformed packet. Missing: 'source'";
     std::cerr << errorMessage << std::endl;
 
     throw std::runtime_error(errorMessage);
@@ -59,7 +57,7 @@ MessagePacket MessagePacket::deserialize(const std::string& dataStr) {
   const auto source = doc["messagePacket"]["source"].GetString();
 
   if (!msgPacketRoot.HasMember("destination")) {
-    std::string errorMessage = "ERROR: Malformed packet. Missing: 'destination`";
+    std::string errorMessage = "ERROR: Malformed packet. Missing: 'destination'";
     std::cerr << errorMessage << std::endl;
 
     throw std::runtime_error(errorMessage);
@@ -67,7 +65,7 @@ MessagePacket MessagePacket::deserialize(const std::string& dataStr) {
   const auto destination = doc["messagePacket"]["destination"].GetString();
 
   if (!msgPacketRoot.HasMember("source")) {
-    std::string errorMessage = "ERROR: Malformed packet. Missing: 'uuid`";
+    std::string errorMessage = "ERROR: Malformed packet. Missing: 'uuid'";
     std::cerr << errorMessage << std::endl;
 
     throw std::runtime_error(errorMessage);
@@ -75,7 +73,7 @@ MessagePacket MessagePacket::deserialize(const std::string& dataStr) {
   const auto id = uuids::uuid::from_string(doc["messagePacket"]["uuid"].GetString()).value();
 
   if (!msgPacketRoot.HasMember("timestamp")) {
-    std::string errorMessage = "ERROR: Malformed packet. Missing: 'timestamp`";
+    std::string errorMessage = "ERROR: Malformed packet. Missing: 'timestamp'";
     std::cerr << errorMessage << std::endl;
 
     throw std::runtime_error(errorMessage);
@@ -83,19 +81,22 @@ MessagePacket MessagePacket::deserialize(const std::string& dataStr) {
   const auto timestamp = stringToTime_t(doc["messagePacket"]["timestamp"].GetString());
 
   if (!msgPacketRoot.HasMember("messageType")) {
-    std::string errorMessage = "ERROR: Malformed packet. Missing: 'messagetype`";
+    std::string errorMessage = "ERROR: Malformed packet. Missing: 'messagetype'";
     std::cerr << errorMessage << std::endl;
 
     throw std::runtime_error(errorMessage);
   }
   const auto messageType = static_cast<MessageType>(doc["messagePacket"]["messageType"].GetInt());
 
-  //const std::string payloadStr = doc["messagePacket"]["data"].GetString();
+  if (!msgPacketRoot.HasMember("payload") || !msgPacketRoot["payload"].IsObject()) {
+    std::string errorMessage = "ERROR: Malformed packet. Missing: 'payload'";
+  }
+  const rapidjson::Value& payloadObj = msgPacketRoot["payload"].GetObject();
 
   // Call deserialize method for specific message type
-  //const std::shared_ptr<IMessagePayload> payload{getDispatchTable()[messageType](payloadStr)};
+  const std::shared_ptr<IMessagePayload> payload{getDispatchTable()[messageType](payloadObj)};
 
-  return {source, destination, id, timestamp, messageType, nullptr};
+  return {source, destination, id, timestamp, messageType, payload};
 }
 
 MessagePacket::MessagePacket(const std::string& source,
