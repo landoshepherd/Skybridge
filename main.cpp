@@ -10,40 +10,6 @@
 #include "rapidjson/document.h"
 #include "include/VehicleTelemetryPayload.h"
 
-/*void processData(const std::shared_ptr<ITelemetryDisplay>& terminalDisplay) {
-  ThreadSafeQueue& queue = ThreadSafeQueue::getInstance();
-
-  while (true) {
-    TelemetryData newData;
-
-    // Waits for data to appear in the queue
-    queue.waitAndPop(newData);
-    std::cout << "Main thread: Processing..." << std::endl;
-    terminalDisplay->updateDisplay(newData);
-  }
-}
-
-void receiveData() {
-  ThreadSafeQueue& queue = ThreadSafeQueue::getInstance();
-  while (true) {
-    std::cout << "Data Receiver: LISTENING" << std::endl;
-    std::this_thread::sleep_for(std::chrono::seconds(5));
-    std::cout << "Data Receiver: DATA RECEIVED!" << std::endl;
-
-    VehicleTelemetryMessage data {
-      .gpsStatus = GPSStatus::OPERATIONAL,
-      .latitude = 27.849293,
-      .longitude = -82.114077,
-      .altitude = 345.2,
-      .groundSpeed = 10,
-      .rateOfClimb = 3,
-      .batteryVoltage = 3.7,
-    };
-
-    queue.push(data);
-  }
-}*/
-
 std::string data = R"(
   {
     "messagePacket":{
@@ -65,6 +31,32 @@ std::string data = R"(
   }
 )";
 
+void receiveMessages(AmqClient& client) {
+  std::this_thread::sleep_for(std::chrono::seconds(3));
+  proton::message msg = client.receive();
+
+  const auto body = proton::get<std::string>(msg.body());
+
+  try {
+    MessagePacket packet = MessagePacket::deserialize(to_string(msg.body()));
+    ThreadSafeQueue::getInstance().push(packet);
+  }
+  catch (std::exception& ex) {
+    std::cout << "Error Processing received message. Message tossed. Recovering..." << std::endl;
+  }
+}
+
+void displayData(AmqClient& client) {
+  TerminalDisplay terminal;
+
+  while (true) {
+    MessagePacket newMessage;
+    ThreadSafeQueue::getInstance().waitAndPop(newMessage);
+
+    terminal.updateDisplay(newMessage);
+  }
+}
+
 int main(int argc, char *argv[]) {
   // Connect to the amq server
   // TODO: Make this configurable via a configuration file
@@ -76,36 +68,26 @@ int main(int argc, char *argv[]) {
   // TODO: Is there a way we can wait for a specific condition instead
   std::this_thread::sleep_for(std::chrono::seconds(1));
 
-  // Set up the sender and wait for a message
-  std::thread sender([&]() {
-    // TODO: Wrap telemetry data into Message packet then serialize it
-    proton::message msg(data);
-    msg.creation_time(proton::timestamp::now());
-    client.send(msg);
+  // Start processor
+  std::thread dataDisplayThread([&]() {
+    displayData(client);
   });
 
-  std::thread receiver([&]() {
-    std::this_thread::sleep_for(std::chrono::seconds(3));
-    proton::message msg = client.receive();
-    
-    const auto body = proton::get<std::string>(msg.body());
-
-    try {
-      const MessagePacket packet = MessagePacket::deserialize(to_string(msg.body()));
-      /*
-      TODO: Move this activity to it's own thread. This thread is only for
-        receiving messages and putting them on the queue.
-      */
-      TerminalDisplay display;
-      display.updateDisplay(packet);
-    }
-    catch (std::exception& ex) {
-      std::cout << "Error Processing received message. Message tossed. Recovering..." << std::endl;
-    }
+  // Start receiver
+  std::thread receiverThread([&]() {
+    receiveMessages(client);
   });
 
-  receiver.join();
-  sender.join();
+  // Send a message
+  proton::message msg(data);
+  msg.creation_time(proton::timestamp::now());
+
+  // TODO: The send invocation should not be here. It should be deleted and called
+  //  only when we send commands or heartbeats from the client
+  client.send(msg);
+
+  receiverThread.join();
+  dataDisplayThread.join();
   container_thread.join();
 
   return 0;
