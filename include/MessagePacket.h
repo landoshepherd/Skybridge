@@ -52,6 +52,9 @@ public:
                 MessageType messageType,
                 std::shared_ptr<IMessagePayload> messagePayload);
 
+  // Constructor
+  MessagePacket() = default;
+
   // Move constructor
   MessagePacket(MessagePacket&&) = default;
 
