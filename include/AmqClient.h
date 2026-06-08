@@ -37,8 +37,6 @@ public:
    * @brief Constructs an AmqClient instance.
    * 
    * @param address The AMQP broker address to connect to (e.g., host:port or URL).
-   * @param username The username used for SASL authentication.
-   * @param password The password used for SASL authentication.
    */
   AmqClient(const std::string& address, const std::string& username, const std::string& password);
 
