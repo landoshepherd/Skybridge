@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <memory>
 #include <thread>
 #include <chrono>
@@ -57,10 +58,43 @@ void displayData(AmqClient& client) {
   }
 }
 
+bool loadBrokerConfig(const std::string& filePath, std::string& ip, std::string& port) {
+  bool result = false;
+
+  std::fstream fi_stream;
+  fi_stream.open(filePath);
+
+  if (fi_stream.is_open()) {
+    rapidjson::Document doc;
+    std::stringstream buffer;
+    buffer << fi_stream.rdbuf();
+    doc.Parse(buffer.str().c_str());
+
+    if (doc.HasParseError()) {
+      return result;
+    }
+
+    ip = doc["host"].GetString();
+    port = doc["port"].GetString();
+    result = true;
+  }
+
+  return result;
+}
+
 int main(int argc, char *argv[]) {
   // Connect to the amq server
   // TODO: Make this configurable via a configuration file
-  AmqClient client("localhost:5672", "admin", "admin");
+
+  std::tuple<std::string, std::string> brokerInfo;
+  const std::string configFilePath = "../config/routerconfig.json";
+  std::string brokerIP;
+  std::string brokerPort;
+  ;
+  if (!loadBrokerConfig(configFilePath, brokerIP, brokerPort)) {
+    std::cerr << "Failed to load broker config. Shutting down." << std::endl;
+  }
+  AmqClient client(brokerIP + ":" + brokerPort, "admin", "admin");
   proton::container container(client);
   std::thread container_thread([&]() {container.run();});
 
